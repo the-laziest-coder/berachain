@@ -74,7 +74,7 @@ class OnchainAccount:
                 await asyncio.sleep(20)
                 balance = await self.w3.eth.get_balance(self.account.evm_address)
                 if balance > 0:
-                    logger.sucess(f'{self.idx}) Tokens received')
+                    logger.success(f'{self.idx}) Tokens received')
                     return
                 logger.info(f'{self.idx}) Still zero tokens')
             logger.info(f'{self.idx}) Finished waiting for tokens')

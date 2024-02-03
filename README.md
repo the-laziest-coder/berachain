@@ -15,7 +15,7 @@
  - `files/emails.txt` - Corresponding emails for wallets
  - `config.toml` - Custom settings
 
-### Confi
+### Config
  - `WAIT_TX_TIME` - How long to wait for transaction confirmation
  - `FAKE_TWITTER` - Verify Twitter tasks without real Twitter actions
  - `GALXE_CAMPAIGN_IDS` - Campaigns to complete, parent campaigns are supported
