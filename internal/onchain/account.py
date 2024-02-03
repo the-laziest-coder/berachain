@@ -69,6 +69,16 @@ class OnchainAccount:
             logger.success(f'{self.idx}) Drip $BERA done')
             self.account.drip_bera = True
 
+            logger.info(f'{self.idx}) Waiting {WAIT_TX_TIME}s for tokens')
+            for _ in range(0, WAIT_TX_TIME, 20):
+                await asyncio.sleep(20)
+                balance = await self.w3.eth.get_balance(self.account.evm_address)
+                if balance > 0:
+                    logger.sucess(f'{self.idx}) Tokens received')
+                    return
+                logger.info(f'{self.idx}) Still zero tokens')
+            logger.info(f'{self.idx}) Finished waiting for tokens')
+
         except Exception as e:
             raise Exception(f'Failed to drip $BERA: {str(e)}')
 
