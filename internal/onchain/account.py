@@ -10,7 +10,7 @@ from ..models import AccountInfo
 from ..captcha import solve_recaptcha_v3
 from ..tls import TLSClient
 from ..utils import async_retry, get_proxy_url, get_w3, int_to_decimal, decimal_to_int
-from ..config import WAIT_TX_TIME
+from ..config import WAIT_TX_TIME, WAIT_DRIP_TOKENS
 
 from .constants import FAUCET_RECAPTCHA_SITE_KEY, \
     ZERO_ADDRESS, W_BERA, STG_USDC, BEX_W_BERA_STG_USDC_POOL, \
@@ -69,15 +69,16 @@ class OnchainAccount:
             logger.success(f'{self.idx}) Drip $BERA done')
             self.account.drip_bera = True
 
-            logger.info(f'{self.idx}) Waiting {WAIT_TX_TIME}s for tokens')
-            for _ in range(0, WAIT_TX_TIME, 20):
-                await asyncio.sleep(20)
-                balance = await self.w3.eth.get_balance(self.account.evm_address)
-                if balance > 0:
-                    logger.success(f'{self.idx}) Tokens received')
-                    return
-                logger.info(f'{self.idx}) Still zero tokens')
-            logger.info(f'{self.idx}) Finished waiting for tokens')
+            if WAIT_DRIP_TOKENS:
+                logger.info(f'{self.idx}) Waiting {WAIT_TX_TIME}s for tokens')
+                for _ in range(0, WAIT_TX_TIME, 20):
+                    await asyncio.sleep(20)
+                    balance = await self.w3.eth.get_balance(self.account.evm_address)
+                    if balance > 0:
+                        logger.success(f'{self.idx}) Tokens received')
+                        return
+                    logger.info(f'{self.idx}) Still zero tokens')
+                logger.info(f'{self.idx}) Finished waiting for tokens')
 
         except Exception as e:
             raise Exception(f'Failed to drip $BERA: {str(e)}')
@@ -163,7 +164,7 @@ class OnchainAccount:
                                       'referrer': 'https://artio.bex.berachain.com/'
                                   })
 
-        amount_out = int(int(resp['steps'][-1]['amountOut']) * 0.95)
+        amount_out = int(int(resp['steps'][-1]['amountOut']) * 0.9)
         route = [(BEX_W_BERA_STG_USDC_POOL, ZERO_ADDRESS, amount, STG_USDC, amount_out, b'')]
         deadline = 99999999
         args = (SwapKind.GIVEN_IN.value, route, deadline)

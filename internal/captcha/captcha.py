@@ -37,7 +37,8 @@ async def solve_recaptcha_v2(idx, url, site_key, proxy=None, **kwargs):
     if CAP_SOLVER_API_KEY:
         return await _solve_captcha(
             CAP_SOLVER_API_URL, CAP_SOLVER_API_KEY, TaskType.RECAPTCHA_V2,
-            idx, url, site_key, proxy, userAgent=USER_AGENT, **kwargs,
+            idx, url, site_key, proxy, proxy_one_line=True,
+            userAgent=USER_AGENT, **kwargs,
         )
     elif TWO_CAPTCHA_API_KEY:
         return await _solve_captcha(
@@ -58,23 +59,27 @@ async def solve_recaptcha_v3(idx, url, site_key, page_action, proxy=None, **kwar
     if CAP_SOLVER_API_KEY:
         return await _solve_captcha(
             CAP_SOLVER_API_URL, CAP_SOLVER_API_KEY, TaskType.RECAPTCHA_V3,
-            idx, url, site_key, proxy, pageAction=page_action, minScore=0.9, **kwargs,
+            idx, url, site_key, proxy, proxy_one_line=True,
+            pageAction=page_action, minScore=0.9, userAgent=USER_AGENT, **kwargs,
         )
     elif TWO_CAPTCHA_API_KEY:
         return await _solve_captcha(
             TWO_CAPTCHA_API_URL, TWO_CAPTCHA_API_KEY, TaskType.RECAPTCHA_V3_PROXY_LESS,
-            idx, url, site_key, proxy, pageAction=page_action, minScore=0.9, **kwargs,
+            idx, url, site_key, proxy, pageAction=page_action, minScore=0.9, userAgent=USER_AGENT, **kwargs,
         )
     elif CAP_MONSTER_API_KEY:
         return await _solve_captcha(
             CAP_MONSTER_API_URL, CAP_MONSTER_API_KEY, TaskType.RECAPTCHA_V3_PROXY_LESS,
-            idx, url, site_key, proxy, pageAction=page_action, minScore=0.9, **kwargs,
+            idx, url, site_key, proxy, pageAction=page_action, minScore=0.9, userAgent=USER_AGENT, **kwargs,
         )
     else:
         raise Exception('No captcha service API keys specified')
 
 
-async def _solve_captcha(api_url, client_key, task_type, idx, url, site_key, proxy=None, **additional_task_properties):
+async def _solve_captcha(api_url, client_key,
+                         task_type, idx, url, site_key,
+                         proxy=None, proxy_one_line=False,
+                         **additional_task_properties):
     create_task_req = {
         'clientKey': client_key,
         'task': {
@@ -84,15 +89,21 @@ async def _solve_captcha(api_url, client_key, task_type, idx, url, site_key, pro
             **additional_task_properties,
         },
     }
+    proxy = get_proxy_url(proxy)
     if proxy and 'Proxyless' not in task_type.value:
-        parsed_proxy = urlparse(get_proxy_url(proxy))
-        create_task_req['task'].update({
-            'proxyType': parsed_proxy.scheme,
-            'proxyAddress': parsed_proxy.hostname,
-            'proxyPort': parsed_proxy.port,
-            'proxyLogin': parsed_proxy.username,
-            'proxyPassword': parsed_proxy.password,
-        })
+        if proxy_one_line:
+            create_task_req['task'].update({
+                'proxy': proxy,
+            })
+        else:
+            parsed_proxy = urlparse(proxy)
+            create_task_req['task'].update({
+                'proxyType': parsed_proxy.scheme,
+                'proxyAddress': parsed_proxy.hostname,
+                'proxyPort': parsed_proxy.port,
+                'proxyLogin': parsed_proxy.username,
+                'proxyPassword': parsed_proxy.password,
+            })
 
     @async_retry
     async def create_task():

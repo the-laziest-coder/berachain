@@ -1,12 +1,12 @@
-WAIT_BETWEEN_ACCOUNTS = [0, 0]
+WAIT_BETWEEN_ACCOUNTS = [30, 40]
 MAX_TRIES = 2
 
-THREADS_NUM = 1
+THREADS_NUM = 5
 DISABLE_SSL = false
 
 RPC = "https://artio.rpc.berachain.com"
 
-# Need one of this: 2captcha or capsolver
+# Need one of this: 2captcha or capsolver. Capsolver is better
 TWO_CAPTCHA_API_KEY = ""
 CAP_SOLVER_API_KEY = ""
 
@@ -15,6 +15,7 @@ SKIP_FIRST_ACCOUNTS = 0
 RANDOM_ORDER = false
 
 DO_ONCHAIN = true
+WAIT_DRIP_TOKENS = false
 WAIT_TX_TIME = 300
 
 FAKE_TWITTER = true
