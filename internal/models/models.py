@@ -24,6 +24,7 @@ class AccountInfo:
     twitter_error: bool = False
     points: dict[str, Tuple[str, int, Optional[bool]]] = field(default_factory=dict)
     drip_bera: bool = False
+    last_drip_ts: int = 0
     swap_bera: bool = False
     mint_honey: bool = False
 

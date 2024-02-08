@@ -45,7 +45,10 @@ class OnchainAccount:
         await self.close()
 
     @async_retry
-    async def drip_bera(self):
+    async def drip_bera(self, wait_drip_tokens=WAIT_DRIP_TOKENS):
+        if int(time.time()) < self.account.last_drip_ts + 1200:
+            logger.info(f'{self.idx}) The last drip was less than 20 minutes ago. Will not request more now')
+            return
         try:
             captcha = await solve_recaptcha_v3(
                 self.idx,
@@ -68,8 +71,9 @@ class OnchainAccount:
 
             logger.success(f'{self.idx}) Drip $BERA done')
             self.account.drip_bera = True
+            self.account.last_drip_ts = int(time.time())
 
-            if WAIT_DRIP_TOKENS:
+            if wait_drip_tokens:
                 logger.info(f'{self.idx}) Waiting {WAIT_TX_TIME}s for tokens')
                 for _ in range(0, WAIT_TX_TIME, 20):
                     await asyncio.sleep(20)
@@ -84,7 +88,7 @@ class OnchainAccount:
             raise Exception(f'Failed to drip $BERA: {str(e)}')
 
     @async_retry
-    async def _build_and_send_tx(self, func: AsyncContractConstructor, action='', **tx_vars):
+    async def _build_and_send_tx(self, func: AsyncContractConstructor, **tx_vars):
         max_priority_fee = await self.w3.eth.max_priority_fee
         max_priority_fee = int(max_priority_fee * 2)
         base_fee_per_gas = int((await self.w3.eth.get_block("latest"))["baseFeePerGas"])
@@ -133,7 +137,7 @@ class OnchainAccount:
         raise Exception(msg)
 
     async def build_and_send_tx(self, func: AsyncContractConstructor, action='', **tx_vars):
-        tx_hash = await self._build_and_send_tx(func, action, **tx_vars)
+        tx_hash = await self._build_and_send_tx(func, **tx_vars)
         await self._tx_verification(tx_hash, action)
 
     async def approve_if_needed(self, token_address, spender, amount):
@@ -143,6 +147,10 @@ class OnchainAccount:
 
     @async_retry
     async def _swap_bera(self):
+        balance = await self.w3.eth.get_balance(self.account.evm_address)
+        if balance < 10 ** 16:
+            logger.info(f'{self.idx}) Not enough $BERA balance. Trying to drip')
+            await self.drip_bera(wait_drip_tokens=True)
         balance = await self.w3.eth.get_balance(self.account.evm_address)
         if balance < 10 ** 16:
             raise Exception(f'Not enough $BERA balance: {"%.5f" % int_to_decimal(balance, 18)}')
