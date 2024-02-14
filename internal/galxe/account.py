@@ -42,6 +42,7 @@ class GalxeAccount:
         self.profile = None
         self.captcha = None
         self.captcha_lock = Lock()
+        self.is_retry = False
 
     async def close(self):
         await self.client.close()
@@ -258,6 +259,8 @@ class GalxeAccount:
                     logger.info(f'{self.idx}) Waiting for 30s to retry')
                     await asyncio.sleep(31)
 
+                self.is_retry = i > 0
+
                 cred_group = campaign['credentialGroups'][group_id]
                 need_retry = await self._complete_cred_group(campaign['id'], cred_group)
 
@@ -292,7 +295,7 @@ class GalxeAccount:
             case 'EMAIL':
                 need_sync = await self._complete_email(campaign_id, credential)
             case 'EVM_ADDRESS':
-                need_sync = await self._complete_eth(credential)
+                need_sync = await self._complete_eth(campaign_id, credential)
             case 'GALXE_ID':
                 need_sync = await self._complete_galxe_id(campaign_id, credential)
             case unexpected:
@@ -342,7 +345,12 @@ class GalxeAccount:
                     return False
                 raise Exception(f'{unexpected} credential source for Email task is not supported yet')
 
-    async def _complete_eth(self, credential) -> bool:
+    async def _complete_eth(self, campaign_id: str, credential) -> bool:
+        match credential['credSource']:
+            case 'VISIT_LINK':
+                await self.add_typed_credential(campaign_id, credential)
+                return True
+        logger.warning(f'{self.idx}) {credential["name"]} is not done or not updated yet. Trying to verify it anyway')
         return True
 
     async def _complete_galxe_id(self, campaign_id: str, credential) -> bool:
@@ -420,6 +428,9 @@ class GalxeAccount:
     @captcha_retry
     @async_retry
     async def add_typed_credential(self, campaign_id: str, credential):
+        if self.is_retry:
+            self.is_retry = False
+            return
         captcha = await self.get_captcha()
         await self.client.add_typed_credential_items(campaign_id, credential['id'], captcha)
         await wait_a_bit(3)
