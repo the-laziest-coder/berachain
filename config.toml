@@ -1,4 +1,4 @@
-WAIT_BETWEEN_ACCOUNTS = [30, 40]
+WAIT_BETWEEN_ACCOUNTS = [60, 70]
 MAX_TRIES = 2
 
 THREADS_NUM = 5
@@ -6,9 +6,7 @@ DISABLE_SSL = false
 
 RPC = "https://artio.rpc.berachain.com"
 
-# Need one of this: 2captcha or capsolver. Capsolver is better
 TWO_CAPTCHA_API_KEY = ""
-CAP_SOLVER_API_KEY = ""
 
 UPDATE_STORAGE_ACCOUNT_INFO = true
 SKIP_FIRST_ACCOUNTS = 0

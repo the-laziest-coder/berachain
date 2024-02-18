@@ -43,7 +43,7 @@ class MultiException(Exception):
         self.excs = excs
 
 
-async def process_account(account_data: Tuple[int, Tuple[str, str, str, str, str]],
+async def process_account(account_data: Tuple[int, Tuple[str, str, str, str]],
                           storage: AccountStorage):
 
     idx, (evm_wallet, proxy, twitter_token, email) = account_data

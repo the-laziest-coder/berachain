@@ -7,12 +7,12 @@ from web3.exceptions import TransactionNotFound
 from web3.contract.async_contract import AsyncContractConstructor
 
 from ..models import AccountInfo
-from ..captcha import solve_recaptcha_v3
+from ..captcha import solve_cloudflare_challenge
 from ..tls import TLSClient
 from ..utils import async_retry, get_proxy_url, get_w3, int_to_decimal, decimal_to_int
 from ..config import WAIT_TX_TIME, WAIT_DRIP_TOKENS
 
-from .constants import FAUCET_RECAPTCHA_SITE_KEY, \
+from .constants import FAUCET_CLOUDFLARE_SITE_KEY, \
     ZERO_ADDRESS, W_BERA, STG_USDC, BEX_W_BERA_STG_USDC_POOL, \
     BEX_ADDRESS, BEX_ABI, HONEY_ADDRESS, HONEY_ABI, ERC20_ABI, \
     SCAN, SwapKind
@@ -50,11 +50,10 @@ class OnchainAccount:
             logger.info(f'{self.idx}) The last drip was less than 20 minutes ago. Will not request more now')
             return
         try:
-            captcha = await solve_recaptcha_v3(
+            captcha = await solve_cloudflare_challenge(
                 self.idx,
                 'https://artio.faucet.berachain.com',
-                FAUCET_RECAPTCHA_SITE_KEY,
-                'submit',
+                FAUCET_CLOUDFLARE_SITE_KEY,
                 self.proxy,
             )
 
@@ -63,7 +62,7 @@ class OnchainAccount:
                     raise Exception()
 
             await self.tls.post(
-                f'https://artio-80085-faucet-api-recaptcha.berachain.com/api/claim?address={self.account.evm_address}',
+                f'https://artio-80085-faucet-api-cf.berachain.com/api/claim?address={self.account.evm_address}',
                 [200], _handler,
                 headers={'Authorization': 'Bearer ' + captcha},
                 data=f'{{"address":"{self.account.evm_address}"}}',

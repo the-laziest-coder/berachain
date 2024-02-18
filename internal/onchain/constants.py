@@ -8,6 +8,7 @@ def read_file(path):
 
 
 FAUCET_RECAPTCHA_SITE_KEY = '6LfOA04pAAAAAL9ttkwIz40hC63_7IsaU2MgcwVH'
+FAUCET_CLOUDFLARE_SITE_KEY = '0x4AAAAAAARdAuciFArKhVwt'
 
 SCAN = 'https://artio.beratrail.io'
 

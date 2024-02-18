@@ -30,6 +30,8 @@ class TaskType(Enum):
     RECAPTCHA_V2 = 'RecaptchaV2Task'
     RECAPTCHA_V3 = 'RecaptchaV3Task'
     RECAPTCHA_V3_PROXY_LESS = 'RecaptchaV3TaskProxyless'
+    TURNSTILE_TASK = 'TurnstileTask'
+    ANTI_CLOUDFLARE_TASK = 'AntiCloudflareTask'
 
 
 @solve_captcha_retry
@@ -51,7 +53,7 @@ async def solve_recaptcha_v2(idx, url, site_key, proxy=None, **kwargs):
             idx, url, site_key, proxy, userAgent=USER_AGENT, **kwargs,
         )
     else:
-        raise Exception('No captcha service API keys specified')
+        raise Exception('No captcha service API keys specified for recaptcha v2')
 
 
 @solve_captcha_retry
@@ -73,11 +75,22 @@ async def solve_recaptcha_v3(idx, url, site_key, page_action, proxy=None, **kwar
             idx, url, site_key, proxy, pageAction=page_action, minScore=0.9, userAgent=USER_AGENT, **kwargs,
         )
     else:
-        raise Exception('No captcha service API keys specified')
+        raise Exception('No captcha service API keys specified for recaptcha v3')
+
+
+@solve_captcha_retry
+async def solve_cloudflare_challenge(idx, url, site_key, proxy):
+    if TWO_CAPTCHA_API_KEY:
+        return await _solve_captcha(
+            TWO_CAPTCHA_API_URL, TWO_CAPTCHA_API_KEY, TaskType.TURNSTILE_TASK,
+            idx, url, site_key, proxy=proxy, userAgent=USER_AGENT,
+        )
+    else:
+        raise Exception('No captcha service API keys specified for cloudflare')
 
 
 async def _solve_captcha(api_url, client_key,
-                         task_type, idx, url, site_key,
+                         task_type, idx, url, site_key='',
                          proxy=None, proxy_one_line=False,
                          **additional_task_properties):
     create_task_req = {
@@ -85,10 +98,11 @@ async def _solve_captcha(api_url, client_key,
         'task': {
             'type': task_type.value,
             'websiteURL': url,
-            'websiteKey': site_key,
             **additional_task_properties,
         },
     }
+    if site_key:
+        create_task_req['task']['websiteKey'] = site_key
     proxy = get_proxy_url(proxy)
     if proxy and 'Proxyless' not in task_type.value:
         if proxy_one_line:
@@ -138,7 +152,7 @@ async def _solve_captcha(api_url, client_key,
         logger.info(f'{idx}) Captcha task status: {status}')
         if solution is None:
             continue
-        response = solution['gRecaptchaResponse']
+        response = solution['token'] if 'TurnstileTask' in task_type.value else solution['gRecaptchaResponse']
         break
     if response is None:
         raise Exception(f'Captcha solving takes too long')
