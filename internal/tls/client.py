@@ -71,7 +71,7 @@ class TLSClient:
         if 'timeout' in kwargs:
             timeout = kwargs.pop('timeout')
         if DISABLE_SSL:
-            kwargs.update({'ssl': False})
+            kwargs.update({'verify': False})
         match method:
             case 'GET':
                 resp = await self.sess.get(url, headers=headers, timeout=timeout, **kwargs)
