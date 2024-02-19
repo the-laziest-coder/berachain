@@ -60,15 +60,16 @@ class OnchainAccount:
             def _handler(r):
                 if 'Txhash' not in r['msg']:
                     raise Exception()
+                return r['msg']
 
-            await self.tls.post(
+            msg = await self.tls.post(
                 f'https://artio-80085-faucet-api-cf.berachain.com/api/claim?address={self.account.evm_address}',
                 [200], _handler,
                 headers={'Authorization': 'Bearer ' + captcha},
                 data=f'{{"address":"{self.account.evm_address}"}}',
             )
 
-            logger.success(f'{self.idx}) Drip $BERA done')
+            logger.success(f'{self.idx}) Drip $BERA done: {msg}')
             self.account.drip_bera = True
             self.account.last_drip_ts = int(time.time())
 
